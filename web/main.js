@@ -1,4 +1,4 @@
-const { createApp, ref, computed, onMounted, nextTick } = Vue;
+﻿const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
 const API_BASE = "http://localhost:8080";
 
@@ -11,6 +11,16 @@ createApp({
     const spinning = ref(false);
     const wheelCanvas = ref(null);
     let currentRotation = 0;
+
+    const authVisible = ref(false);
+    const authMode = ref("login");
+    const authUsername = ref("");
+    const authPassword = ref("");
+    const authTip = ref("");
+    const authToken = ref(localStorage.getItem("lottery_token") || "");
+    const authUser = ref(localStorage.getItem("lottery_user") || "");
+
+    const isAuthed = computed(() => !!authToken.value);
 
     const participants = computed(() => {
       const set = new Set(records.value.map((r) => r.name));
@@ -138,6 +148,11 @@ createApp({
         result.value = "请输入姓名";
         return;
       }
+      if (!isAuthed.value) {
+        result.value = "请先登录";
+        openAuth("login");
+        return;
+      }
       if (spinning.value) {
         return;
       }
@@ -148,7 +163,8 @@ createApp({
         const res = await fetchJson("/api/draw", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + authToken.value
           },
           body: JSON.stringify({ name: trimmed })
         });
@@ -161,13 +177,64 @@ createApp({
           spinning.value = false;
         }, 4200);
       } catch (err) {
-        result.value = "抽奖失败，请稍后重试";
+        result.value = "抽奖失败，请重新登录";
         spinning.value = false;
+        logout();
       }
     }
 
     function formatTime(time) {
       return new Date(time).toLocaleString();
+    }
+
+    function openAuth(mode) {
+      authMode.value = mode;
+      authVisible.value = true;
+      authTip.value = "";
+    }
+
+    function closeAuth() {
+      authVisible.value = false;
+    }
+
+    function toggleAuth() {
+      authMode.value = authMode.value === "login" ? "register" : "login";
+      authTip.value = "";
+    }
+
+    async function submitAuth() {
+      const username = authUsername.value.trim();
+      const password = authPassword.value.trim();
+      if (!username || !password) {
+        authTip.value = "请填写完整信息";
+        return;
+      }
+      const path = authMode.value === "login" ? "/api/auth/login" : "/api/auth/register";
+      try {
+        const res = await fetchJson(path, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ username, password })
+        });
+        authToken.value = res.token;
+        authUser.value = res.username;
+        localStorage.setItem("lottery_token", authToken.value);
+        localStorage.setItem("lottery_user", authUser.value);
+        authVisible.value = false;
+        authPassword.value = "";
+        authTip.value = "";
+      } catch (err) {
+        authTip.value = err.message || "操作失败";
+      }
+    }
+
+    function logout() {
+      authToken.value = "";
+      authUser.value = "";
+      localStorage.removeItem("lottery_token");
+      localStorage.removeItem("lottery_user");
     }
 
     onMounted(async () => {
@@ -186,7 +253,19 @@ createApp({
       wheelCanvas,
       draw,
       loadRecords,
-      formatTime
+      formatTime,
+      authVisible,
+      authMode,
+      authUsername,
+      authPassword,
+      authTip,
+      authUser,
+      isAuthed,
+      openAuth,
+      closeAuth,
+      toggleAuth,
+      submitAuth,
+      logout
     };
   }
 }).mount("#app");
