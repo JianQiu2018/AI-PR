@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -20,6 +20,16 @@
           </div>
         </div>
         <div class="hero-card">
+          <div class="auth-actions">
+            <template v-if="isAuthed">
+              <span class="welcome">你好，{{ authUser }}</span>
+              <button class="ghost" @click="logout">退出</button>
+            </template>
+            <template v-else>
+              <button class="ghost" @click="openAuth('login')">登录</button>
+              <button class="primary" @click="openAuth('register')">注册</button>
+            </template>
+          </div>
           <div class="stat">
             <div class="label">累计参与</div>
             <div class="value">{{ participants }}</div>
@@ -54,7 +64,9 @@
                 <span>参与者姓名</span>
                 <input v-model.trim="name" type="text" placeholder="请输入参与者姓名" maxlength="20" />
               </label>
-              <button class="primary" :disabled="spinning" @click="draw">{{ spinning ? '抽奖中...' : '开始抽奖' }}</button>
+              <button class="primary" :disabled="spinning" @click="draw">
+                {{ spinning ? '抽奖中...' : '开始抽奖' }}
+              </button>
               <div class="result">{{ result }}</div>
             </div>
           </div>
@@ -115,6 +127,30 @@
         <div>Lucky Draw Console · Vue 3 + Spring Boot</div>
         <div class="muted">支持 MySQL 持久化与前后端分离部署</div>
       </footer>
+
+      <div class="modal-mask" v-if="authVisible">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>{{ authMode === 'login' ? '登录' : '注册' }}</h3>
+            <button class="ghost" @click="closeAuth">关闭</button>
+          </div>
+          <div class="modal-body">
+            <label class="input">
+              <span>用户名</span>
+              <input v-model.trim="authUsername" type="text" placeholder="3-20 位用户名" />
+            </label>
+            <label class="input">
+              <span>密码</span>
+              <input v-model.trim="authPassword" type="password" placeholder="至少 6 位" />
+            </label>
+            <div class="auth-tip">{{ authTip }}</div>
+          </div>
+          <div class="modal-footer">
+            <button class="ghost" @click="toggleAuth">{{ authMode === 'login' ? '去注册' : '去登录' }}</button>
+            <button class="primary" @click="submitAuth">{{ authMode === 'login' ? '登录' : '注册' }}</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
