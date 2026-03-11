@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>幸运抽奖系统 · Vue 版</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="app" class="page">
+      <header class="hero">
+        <div class="brand">
+          <div class="eyebrow">Lucky Draw Console</div>
+          <h1>幸运抽奖系统</h1>
+          <p>使用 Vue 重构的抽奖控制台，支持实时抽奖、记录持久化与奖品配置展示。</p>
+          <div class="hero-actions">
+            <span class="chip">活动进行中</span>
+            <span class="chip ghost">MySQL 持久化</span>
+            <span class="chip ghost">Vue 3 前端</span>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="stat">
+            <div class="label">累计参与</div>
+            <div class="value">{{ participants }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">记录数量</div>
+            <div class="value">{{ recordCount }}</div>
+          </div>
+          <div class="stat">
+            <div class="label">当前状态</div>
+            <div class="value">{{ spinning ? '抽奖中' : '就绪' }}</div>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card wheel-card">
+          <div class="card-header">
+            <div>
+              <h2>幸运转盘</h2>
+              <p>输入姓名开始抽奖，系统会自动记录每一次结果。</p>
+            </div>
+          </div>
+
+          <div class="wheel-zone">
+            <div class="wheel-wrap">
+              <div class="pointer"></div>
+              <canvas ref="wheelCanvas" class="wheel" width="420" height="420"></canvas>
+            </div>
+            <div class="control">
+              <label class="input">
+                <span>参与者姓名</span>
+                <input v-model.trim="name" type="text" placeholder="请输入参与者姓名" maxlength="20" />
+              </label>
+              <button class="primary" :disabled="spinning" @click="draw">{{ spinning ? '抽奖中...' : '开始抽奖' }}</button>
+              <div class="result">{{ result }}</div>
+            </div>
+          </div>
+
+          <div class="note">
+            <div>
+              <h3>抽奖规则</h3>
+              <p>奖品概率与权重由后端配置，抽奖记录实时写入 MySQL 并在右侧展示。</p>
+            </div>
+            <div>
+              <h3>安全提示</h3>
+              <p>如需限制抽奖次数或身份校验，可在后端扩展参与者校验逻辑。</p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="card records-card">
+          <div class="card-header">
+            <div>
+              <h2>抽奖记录</h2>
+              <p>最近 200 条记录</p>
+            </div>
+            <button class="ghost" @click="loadRecords">刷新</button>
+          </div>
+          <div class="record-list">
+            <div v-if="records.length === 0" class="record empty">暂无记录</div>
+            <div v-for="record in records" :key="record.id" class="record">
+              <div class="title">
+                <strong>{{ record.name }}</strong>
+                <span>抽中</span>
+                <strong>{{ record.prizeName }}</strong>
+              </div>
+              <div class="meta">{{ formatTime(record.time) }}</div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="card prize-card">
+          <div class="card-header">
+            <div>
+              <h2>奖品配置</h2>
+              <p>权重越高，抽中概率越大</p>
+            </div>
+          </div>
+          <div class="prize-grid">
+            <div v-for="prize in prizes" :key="prize.id" class="prize" :style="{ '--accent': prize.color || '#9aa5b1' }">
+              <div class="dot"></div>
+              <div>
+                <div class="name">{{ prize.name }}</div>
+                <div class="meta">权重 {{ prize.weight }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>Lucky Draw Console · Vue 3 + Spring Boot</div>
+        <div class="muted">支持 MySQL 持久化与前后端分离部署</div>
+      </footer>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="/main.js"></script>
+  </body>
+</html>
